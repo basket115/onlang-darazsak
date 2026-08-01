@@ -1773,10 +1773,21 @@ function normBeitrag(b){return{
   datum:       b.Freigegeben_Am||b.freigegeben_am||b.Erstellt_Am||b.erstellt_am||b.Datum||b.datum||'',
   erstellt_am: b.Erstellt_Am ||b.erstellt_am ||b.Datum      ||b.datum     ||'',
   status:      b.Verein_Status||b.verein_status||'Entwurf',
-  website_status: b.Website_Status||b.website_status||'',
+  // Wichtig: Die API liefert den sofortigen Website-Kanal teilweise als
+  // website_status = JA, während Website_Status noch "Ausstehend" enthält.
+  // Deshalb zuerst den echten Kanalwert übernehmen und erst danach den
+  // Workflow-Status als Fallback verwenden.
+  website_status:
+    b.website_status ||
+    b.Kanal_Website ||
+    b.kanal_website ||
+    b.Website ||
+    b.website ||
+    b.Website_Status ||
+    '',
 };}
 
-// Website zeigt nur Beiträge die freigegeben UND für Website veröffentlicht wurden
+// Website zeigt nur Beiträge, die freigegeben UND für den Website-Kanal aktiv sind.
 function nurFreigegeben(b){
   const status = String(
     b.status ||
@@ -1787,17 +1798,27 @@ function nurFreigegeben(b){
 
   const websiteStatus = String(
     b.website_status ||
+    b.Kanal_Website ||
+    b.kanal_website ||
+    b.Website ||
+    b.website ||
     b.Website_Status ||
     ''
   ).trim().toLowerCase();
 
-  const freigegeben =
-    status === 'freigegeben' ||
-    status === 'veröffentlicht';
+  const freigegeben = [
+    'freigegeben',
+    'veröffentlicht',
+    'veroeffentlicht'
+  ].includes(status);
 
-  const websiteAktiv =
-    websiteStatus === 'ja' ||
-    websiteStatus === 'veröffentlicht';
+  const websiteAktiv = [
+    'ja',
+    'veröffentlicht',
+    'veroeffentlicht',
+    'true',
+    '1'
+  ].includes(websiteStatus);
 
   const richtigerKunde =
     String(
