@@ -1339,13 +1339,12 @@ window.addEventListener('DOMContentLoaded', () => {
   function setzeKlubTvHoehe(){
     const el = document.getElementById('klub-tv-frame');
     if(!el) return;
-    const obenAbstand = el.getBoundingClientRect().top;
-    const hoehe = window.innerHeight - obenAbstand - 24;
+    const headerHoehe = 90;
+    const hoehe = window.innerHeight - headerHoehe - 40;
     el.style.height = Math.max(hoehe, 400) + 'px';
   }
   window.addEventListener('load', setzeKlubTvHoehe);
   window.addEventListener('resize', setzeKlubTvHoehe);
-  document.addEventListener('scroll', setzeKlubTvHoehe);
 })();
 </script>
 <!-- 8. VERANSTALTUNGEN -->
