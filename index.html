@@ -1904,7 +1904,7 @@ function applyBranding(br){
 
   // ── Theme aktivieren ─────────────────────────────────────
   // br.Theme = 'dark' (default) oder 'hybrid'
-  const theme=(br.Theme||br.theme||'dark').toLowerCase();
+  const theme=(br.Theme||br.theme||'hybrid').toLowerCase();
   document.documentElement.setAttribute('data-theme', theme==='hybrid'?'hybrid':'dark');
 
   // ── Vereinsfarbe ──────────────────────────────────────────
