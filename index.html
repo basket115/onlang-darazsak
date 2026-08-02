@@ -808,33 +808,30 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   try {
-    const resp = await fetch(GAS + '?action=getDarazsakSpielbetrieb');
+   const resp = await fetch(GAS + '?action=get_teams&kundenId=HU001');
     const data = await resp.json();
 
-    if(!data || !data.success || !data.vereine || !data.vereine.length){
+    if(!data || !data.success || !data.teams || !data.teams.length){
       grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
       return;
     }
 
-    grid.innerHTML = data.vereine.map(v => {
-      // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
-      // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
-      const link = v.website || v.web || '';
-      const istLink = link && link.trim();
-      const logoPfad = BBK_VEREIN_LOGOS[v.name];
-      const logoHtml = logoPfad
-        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
+    grid.innerHTML = data.teams.map(t => {
+      const name = t.Team_Name || t.team_name || '–';
+      const foto = t.Team_Foto || t.team_foto || '';
+      const logoHtml = foto
+        ? `<img src="${esc(foto)}" alt="${esc(name)}" style="width:56px;height:56px;border-radius:50%;object-fit:cover;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
         : '🏀';
-      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
+      return `<div class="mv-card" data-name="${esc(name)}">
           <div class="mv-card-logo">${logoHtml}</div>
-          <div class="mv-card-name">${esc(v.name)}</div>
-        </a>`;
+          <div class="mv-card-name">${esc(name)}</div>
+        </div>`;
     }).join('');
 
     const mvDd = document.getElementById('mv-verein-dropdown');
     if(mvDd){
       mvDd.innerHTML = '<option value="">— Vagy válassz csapatot a listából —</option>' +
-        data.vereine.map(v => `<option value="${esc(v.name)}">${esc(v.name)}</option>`).join('');
+        data.teams.map(t => `<option value="${esc(t.Team_Name||t.team_name||'')}">${esc(t.Team_Name||t.team_name||'')}</option>`).join('');
     }
   } catch(err){
     grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
