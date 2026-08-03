@@ -734,6 +734,39 @@ img{display:block;max-width:100%;}
   <div class="sportband-wrap"><div class="sportband-track" id="sportband-track"><div class="sportband-item">Betöltés…</div></div></div>
 </div>
 
+<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
+<section class="sec-sm" id="aktuelles"><div class="wrap">
+  <div class="hero-grid" id="hero-grid">
+    <div id="hero-main"></div>
+    <div class="hero-side" id="hero-side"></div>
+  </div>
+</div></section>
+
+<!-- 5b. AKTUELLE NEWS (Grid) -->
+<section class="nv-section" id="aktuelle-news"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">Hírek</div>
+      <div class="nv-subtitle">A Kőbányai Darazsak hivatalos hírei — közvetlenül az ONLANG Studióból</div>
+    </div>
+    <a class="nv-more" href="#">Összes hír →</a>
+  </div>
+  <div class="nv-grid" id="nv-grid"><div class="empty">Még nincsenek hírek.</div></div>
+</div></section>
+
+<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
+<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">Csapathírek</div>
+      <div class="nv-subtitle">A csapatok hírei — csapat szerint szűrhető</div>
+    </div>
+  </div>
+  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
+    A csapathírek a jövőben itt jelennek meg központilag.
+  </div>
+</div></section>
+
 <!-- 4. MITGLIEDSVEREINE -->
 <section class="sec" id="mitgliedsvereine"><div class="wrap">
   <div class="sec-head">
@@ -808,10 +841,15 @@ window.addEventListener('DOMContentLoaded', async () => {
   };
 
   try {
-   const resp = await fetch(GAS + '?action=get_teams&kundenId=HU001');
-    const data = await resp.json();
+    const data = await loadTeams(); // eine kontrollierte Datenquelle (Timeout/Retry/Cache-Buster)
 
-    if(!data || !data.success || !data.teams || !data.teams.length){
+    if(!data || !data.success){
+      // reiner Ladefehler → bestehende Karten NICHT löschen, nur Hinweis wenn noch leer
+      if(!grid.dataset.filled){ setModHint('mv-grid','error'); }
+      return;
+    }
+    if(!data.teams || !data.teams.length){
+      // erfolgreiche, aber wirklich leere Antwort
       grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
       return;
     }
@@ -828,14 +866,16 @@ window.addEventListener('DOMContentLoaded', async () => {
         </div>`;
     }).join('');
 
+    grid.dataset.filled='1'; // erfolgreich gefüllt → bei späteren Fehlern behalten
     const mvDd = document.getElementById('mv-verein-dropdown');
     if(mvDd){
       mvDd.innerHTML = '<option value="">— Vagy válassz csapatot a listából —</option>' +
         data.teams.map(t => `<option value="${esc(t.Team_Name||t.team_name||'')}">${esc(t.Team_Name||t.team_name||'')}</option>`).join('');
     }
   } catch(err){
-    grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
-    console.warn('Mitgliedsvereine Fehler:', err);
+    // Ladefehler → bereits sichtbare Karten behalten; neutraler Hinweis nur wenn noch leer
+    if(!grid.dataset.filled){ setModHint('mv-grid','error'); }
+    console.warn('[Modul] teams(mv-grid)', err);
   }
 });
 
@@ -854,38 +894,6 @@ function bbkSpringeZuKarte_(gridId, name){
 }
 </script>
 
-<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
-<section class="sec-sm" id="aktuelles"><div class="wrap">
-  <div class="hero-grid" id="hero-grid">
-    <div id="hero-main"></div>
-    <div class="hero-side" id="hero-side"></div>
-  </div>
-</div></section>
-
-<!-- 5b. AKTUELLE NEWS (Grid) -->
-<section class="nv-section" id="aktuelle-news"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Hírek</div>
-      <div class="nv-subtitle">A Kőbányai Darazsak hivatalos hírei — közvetlenül az ONLANG Studióból</div>
-    </div>
-    <a class="nv-more" href="#">Összes hír →</a>
-  </div>
-  <div class="nv-grid" id="nv-grid"><div class="empty">Még nincsenek hírek.</div></div>
-</div></section>
-
-<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
-<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Csapathírek</div>
-      <div class="nv-subtitle">A csapatok hírei — csapat szerint szűrhető</div>
-    </div>
-  </div>
-  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
-    A csapathírek a jövőben itt jelennek meg központilag.
-  </div>
-</div></section>
 <nav class="mob-nav" id="mob-nav">
   <a class="nav-a" href="#start" onclick="toggleNav()">Kezdőlap</a>
   <a class="nav-a" href="#aktuelles" onclick="toggleNav()">Hírek</a>
@@ -1331,7 +1339,7 @@ window.addEventListener('DOMContentLoaded', () => {
     <div style="font-size:13px;color:var(--muted);margin-top:4px;">A Kőbányai Darazsak videói és összefoglalói</div>
   </div>
   <div id="klub-tv-frame" style="position:relative;border-radius:var(--rx);overflow:hidden;box-shadow:var(--card-shadow);background:#000;">
-    <iframe src="https://onlang-tv.netlify.app/?kunde=DEFAULT" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="Kőbányai Darazsak Klub-TV"></iframe>
+    <iframe src="https://onlang-tv.netlify.app/?kunde=HU001" style="position:absolute;top:0;left:0;width:100%;height:100%;border:0;" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen title="Kőbányai Darazsak Klub-TV"></iframe>
   </div>
 </div></section>
 <script>
@@ -1833,90 +1841,149 @@ function nurFreigegeben(b){
 }
 function isEv(b){return EV_ARTEN.some(v=>String(b.beitragsart||b.kategorie||'').toLowerCase().includes(v));}
 function hasVid(b){return!!b.video_url.trim();}
-async function api(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');return(await fetch(u)).json();}
+// ── Abgesicherter API-Zugriff (Phase 0: Timeout, Retry, Status-/Content-Type-/JSON-Prüfung) ──
+function _apiLog(aktion, status, dauerMs, klasse){
+  try{ console.log('[API]', JSON.stringify({aktion:aktion, status:status, dauerMs:Math.round(dauerMs||0), klasse:klasse||null, kundenId:KUNDE, ts:new Date().toISOString()})); }catch(_){}
+}
+function _apiUrl(p){
+  return GAS+'?'+Object.entries(p).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v==null?'':v)).join('&')+'&_cb='+Date.now();
+}
+async function _apiOnce(url, aktion){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 12000); // ~12s Timeout
+  const t0 = (typeof performance!=='undefined'&&performance.now)?performance.now():Date.now();
+  try{
+    const resp = await fetch(url, {cache:'no-store', signal:ctrl.signal});
+    const dauer = ((typeof performance!=='undefined'&&performance.now)?performance.now():Date.now()) - t0;
+    if(!resp.ok){ const e=new Error('HTTP '+resp.status); e.klasse='HttpError'; e.status=resp.status; _apiLog(aktion,'error',dauer,'HttpError'); throw e; }
+    const ct = resp.headers.get('content-type')||'';
+    const text = await resp.text();
+    if(ct.indexOf('application/json')===-1 && /^\s*</.test(text)){ const e=new Error('HTML statt JSON'); e.klasse='ContentTypeError'; _apiLog(aktion,'error',dauer,'ContentTypeError'); throw e; }
+    let json;
+    try{ json = JSON.parse(text); }catch(pe){ const e=new Error('JSON nicht lesbar'); e.klasse='ParseError'; _apiLog(aktion,'error',dauer,'ParseError'); throw e; }
+    _apiLog(aktion,'ok',dauer,null);
+    return json;
+  }catch(err){
+    if(err && err.name==='AbortError'){ const e=new Error('Timeout'); e.klasse='TimeoutError'; _apiLog(aktion,'error',0,'TimeoutError'); throw e; }
+    if(err && !err.klasse){ err.klasse='NetworkError'; }
+    throw err;
+  }finally{ clearTimeout(timer); }
+}
+async function api(p){
+  const aktion = (p&&p.action)||'';
+  try{
+    return await _apiOnce(_apiUrl(p), aktion);
+  }catch(e1){
+    // genau ein Retry nach kurzem Backoff (kein Endlos-Retry)
+    await new Promise(r=>setTimeout(r, 700));
+    return await _apiOnce(_apiUrl(p), aktion);
+  }
+}
+// ── Eine kontrollierte Teams-Datenquelle (verhindert doppelten Request auf mv-grid + teams-row) ──
+let _teamsPromise=null;
+function loadTeams(){ if(!_teamsPromise){ _teamsPromise = api({action:'get_teams', kundenId:KUNDE}); } return _teamsPromise; }
+// ── Modul-Statushelfer: kurzer ungarischer Fehlerhinweis mit Retry ──
+function setModHint(elId, kind){
+  const el=document.getElementById(elId); if(!el) return;
+  if(kind==='error'){ el.innerHTML='<div class="sb-hint">Az adatok jelenleg nem tölthetők be. <button type="button" onclick="init()" style="margin-left:8px;padding:4px 10px;border-radius:8px;border:1px solid var(--border);background:transparent;color:inherit;cursor:pointer;">Újrapróbálás</button></div>'; }
+}
+// ── Letzter guter Zustand pro Modul (Regel 7: bei Refresh-Fehler nichts leeren) ──
+let _lastBranding=null, _lastBeitraege=null, _lastTeams=null, _lastSponsors=null;
+async function api_ALT(p){const u=GAS+'?'+Object.entries(p).map(([k,v])=>encodeURIComponent(k)+'='+encodeURIComponent(v||'')).join('&');return(await fetch(u)).json();}
 
 let _alle=[];
 let _aktivTeam='';
 let _vereinsName='';
 
 async function init(){
+  // Vier unabhängige Ladevorgänge — ein Fehler bei einem blockiert die anderen NICHT.
+  const results = await Promise.allSettled([
+    api({action:'get_branding',       kundenId:KUNDE}),
+    api({action:'getStudioBeitraege', kundenId:KUNDE}),
+    loadTeams(),
+    api({action:'get_sponsors',       kundenId:KUNDE})
+  ]);
+  const bRes=results[0], stRes=results[1], tRes=results[2], sRes=results[3];
+
+  // ── BRANDING (isoliert; niemals Fremd-Branding) ──
+  let br={};
   try{
-    console.log('[T7] KUNDE:', KUNDE);
-    const studioUrl=GAS+'?action=getStudioBeitraege&kundenId='+KUNDE;
-    console.log('[T7] Studio-URL:', studioUrl);
-
-    const[bR,stR,tR,sR]=await Promise.all([
-      api({action:'get_branding',       kundenId:KUNDE}),
-      api({action:'getStudioBeitraege', kundenId:KUNDE}),
-      api({action:'get_teams',          kundenId:KUNDE}),
-      api({action:'get_sponsors',       kundenId:KUNDE})
-    ]);
-
-    console.log('[T7] branding:', bR);
-    console.log('[T7] studioR:', stR);
-    console.log('[T7] beitraege roh:', stR.beitraege?.length, 'Einträge');
-
-    const br=bR.branding||{};
-    const sponsor=stR.sponsor||null;
-    const teams=tR.teams||[];
-    const sponsors=sR.sponsors||[];
-    _vereinsName=br.Verein_Name||br.vereinsname||'';
-    _alle = (stR.beitraege || [])
-  .map(normBeitrag)
-  .filter(nurFreigegeben)
-  .sort(function(a, b) {
-    return String(
-      b.erstellt_am ||
-      b.Erstellt_Am ||
-      b.datum ||
-      ''
-    ).localeCompare(
-      String(
-        a.erstellt_am ||
-        a.Erstellt_Am ||
-        a.datum ||
-        ''
-      )
-    );
-  });
-
-    console.log('[T7] nach normBeitrag + Filter:', _alle.length, 'freigegebene Beiträge');
-    if(_alle.length>0) console.log('[T7] erster Beitrag:', _alle[0]);
-    const videos=_alle.filter(b=>b.beitragsart==='Vereins-TV'||b.kategorie==='Vereins-TV');
-    const evs=_alle.filter(b=>isEv(b));
-    const news=_alle.filter(b=>!isEv(b)&&b.beitragsart!=='Vereins-TV'&&b.kategorie!=='Vereins-TV');
-    applyBranding(br);
-    ladeSportband();
-    renderHero(news,br);
-    // News Cards: ab Index 1 — falls weniger als 2 Beiträge, trotzdem anzeigen ab Index 0
-    const nvBeitraege = news.length > 1 ? news.slice(1,7) : news.slice(0,6);
-    renderNewsV1(nvBeitraege,br);
-    _alleTeams=teams; // global speichern für Modal
-    // Dropdown im Spielbetrieb befüllen
-    const dd=document.getElementById('sb-team-dropdown');
-    if(dd&&teams.length){
-      const aktiv=teams.filter(t=>String(t.Aktiv||t.aktiv||'Ja').trim()!=='Nein')
-        .sort((a,b)=>(Number(a.Sortierung||a.sortierung)||999)-(Number(b.Sortierung||b.sortierung)||999));
-      aktiv.forEach(t=>{
-        const val=t.Team_ID||t.team_id||'';
-        const label=t.Team_Name||t.team_name||val;
-        ['sb-team-dropdown','sb-erg-dropdown','sb-sp-dropdown'].forEach(ddId=>{
-          const d=document.getElementById(ddId);
-          if(!d)return;
-          const opt=document.createElement('option');
-          opt.value=val; opt.textContent=label;
-          d.appendChild(opt);
-        });
-      });
+    if(bRes.status==='fulfilled' && bRes.value && bRes.value.branding){
+      br = bRes.value.branding||{}; _lastBranding=br; applyBranding(br);
+    } else if(_lastBranding){
+      br=_lastBranding; applyBranding(br); // letzter guter HU001-Stand
     }
-    renderTeams(teams,br);
-    renderEvs(evs);
-    renderSponsors(sponsors,br,sponsor);
-    renderKontakt(br);
-    renderApp(br);
-    initNav();
-  }catch(e){console.error('[T7]',e);}
-  finally{const l=document.getElementById('loader');l.classList.add('hide');setTimeout(()=>l.remove(),500);}
+    // sonst: statische Darazsak-Defaults bleiben stehen — KEIN V002/V006/DEFAULT
+    _vereinsName=br.Verein_Name||br.vereinsname||_vereinsName||'';
+  }catch(e){ console.warn('[Modul] branding', e&&e.klasse||e); }
+
+  // ── NEWS / BEITRÄGE (isoliert) ──
+  let sponsor=null;
+  try{
+    let beitraege=null;
+    if(stRes.status==='fulfilled' && stRes.value){
+      beitraege = stRes.value.beitraege||[]; sponsor = stRes.value.sponsor||null; _lastBeitraege=beitraege;
+    } else if(_lastBeitraege){
+      beitraege=_lastBeitraege; // letzter guter Zustand, nicht leeren
+    }
+    if(beitraege){
+      _alle = beitraege.map(normBeitrag).filter(nurFreigegeben).sort(function(a,b){
+        return String(b.erstellt_am||b.Erstellt_Am||b.datum||'').localeCompare(String(a.erstellt_am||a.Erstellt_Am||a.datum||''));
+      });
+      const evs=_alle.filter(function(b){return isEv(b);});
+      const news=_alle.filter(function(b){return !isEv(b)&&b.beitragsart!=='Vereins-TV'&&b.kategorie!=='Vereins-TV';});
+      try{ ladeSportband(); }catch(e){}
+      // Featured-Hero deaktiviert: Beiträge erscheinen NUR in der HÍREK-Liste (kein Doppel beim Csapataink-Bereich)
+      const _aktEl=document.getElementById('aktuelles'); if(_aktEl){ _aktEl.style.display='none'; }
+      const nvBeitraege = news.slice(0,12); // alle freigegebenen News in HÍREK
+      try{ renderNewsV1(nvBeitraege,br); }catch(e){ console.warn('[Modul] news', e); }
+      try{ renderEvs(evs); }catch(e){}
+    } else if(stRes.status==='rejected'){
+      // echter Ladefehler UND kein Cache → lokaler Hinweis, KEINE falsche „keine News"-Meldung
+      setModHint('nv-grid','error');
+    }
+  }catch(e){ console.warn('[Modul] news', e); }
+
+  // ── TEAMS (isoliert; eine Datenquelle über loadTeams) ──
+  try{
+    let teams=null;
+    if(tRes.status==='fulfilled' && tRes.value && tRes.value.teams){ teams=tRes.value.teams||[]; _lastTeams=teams; }
+    else if(_lastTeams){ teams=_lastTeams; }
+    if(teams){
+      _alleTeams=teams; // global für Modal
+      const dd=document.getElementById('sb-team-dropdown');
+      if(dd&&teams.length){
+        const aktiv=teams.filter(function(t){return String(t.Aktiv||t.aktiv||'Ja').trim()!=='Nein';})
+          .sort(function(a,b){return (Number(a.Sortierung||a.sortierung)||999)-(Number(b.Sortierung||b.sortierung)||999);});
+        aktiv.forEach(function(t){
+          const val=t.Team_ID||t.team_id||'';
+          const label=t.Team_Name||t.team_name||val;
+          ['sb-team-dropdown','sb-erg-dropdown','sb-sp-dropdown'].forEach(function(ddId){
+            const d=document.getElementById(ddId); if(!d)return;
+            const opt=document.createElement('option'); opt.value=val; opt.textContent=label; d.appendChild(opt);
+          });
+        });
+      }
+      try{ renderTeams(teams,br); }catch(e){ console.warn('[Modul] teams', e); }
+    }
+    // sonst: bestehende Teamkarten bleiben stehen (kein „wird ergänzt" bei reinem Ladefehler)
+  }catch(e){ console.warn('[Modul] teams', e); }
+
+  // ── SPONSOREN (isoliert) ──
+  try{
+    let sponsors=null;
+    if(sRes.status==='fulfilled' && sRes.value){ sponsors=sRes.value.sponsors||[]; _lastSponsors=sponsors; }
+    else if(_lastSponsors){ sponsors=_lastSponsors; }
+    if(sponsors){ try{ renderSponsors(sponsors,br,sponsor); }catch(e){ console.warn('[Modul] sponsors', e); } }
+  }catch(e){ console.warn('[Modul] sponsors', e); }
+
+  // ── KONTAKT / APP / NAV (nur br nötig, hängen an keinem anderen Modul) ──
+  try{ renderKontakt(br); }catch(e){ console.warn('[Modul] kontakt', e); }
+  try{ renderApp(br); }catch(e){ console.warn('[Modul] app', e); }
+  try{ initNav(); }catch(e){ console.warn('[Modul] nav', e); }
+
+  // Loader ausblenden (immer, unabhängig vom Erfolg einzelner Module)
+  const l=document.getElementById('loader'); if(l){ l.classList.add('hide'); setTimeout(function(){l.remove();},500); }
 }
 
 function applyBranding(br){
