@@ -1336,15 +1336,26 @@ window.addEventListener('DOMContentLoaded', () => {
 </div></section>
 <script>
 (function(){
+
   function setzeKlubTvHoehe(){
     const el = document.getElementById('klub-tv-frame');
     if(!el) return;
-    const headerHoehe = 90;
-    const hoehe = window.innerHeight - headerHoehe - 40;
-    el.style.height = Math.max(hoehe, 400) + 'px';
+
+    // Feste Höhe für ONLANG TV
+    if(window.innerWidth >= 1400){
+      el.style.height = '1300px';
+    }else if(window.innerWidth >= 1100){
+      el.style.height = '1220px';
+    }else if(window.innerWidth >= 768){
+      el.style.height = '1080px';
+    }else{
+      el.style.height = '900px';
+    }
   }
+
   window.addEventListener('load', setzeKlubTvHoehe);
   window.addEventListener('resize', setzeKlubTvHoehe);
+
 })();
 </script>
 <!-- 8. VERANSTALTUNGEN -->
