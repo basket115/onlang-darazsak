@@ -720,283 +720,44 @@ img{display:block;max-width:100%;}
   <div class="sportband-wrap"><div class="sportband-track" id="sportband-track"><div class="sportband-item">Betöltés…</div></div></div>
 </div>
 
+<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
+<section class="sec-sm" id="aktuelles"><div class="wrap">
+  <div class="hero-grid" id="hero-grid">
+    <div id="hero-main"></div>
+    <div class="hero-side" id="hero-side"></div>
+  </div>
+</div></section>
+
+<!-- 5b. AKTUELLE NEWS (Grid) -->
+<section class="nv-section" id="aktuelle-news"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">Hírek</div>
+      <div class="nv-subtitle">A Kőbányai Darazsak hivatalos hírei — közvetlenül az ONLANG Studióból</div>
+    </div>
+    <a class="nv-more" href="#">Összes hír →</a>
+  </div>
+  <div class="nv-grid" id="nv-grid"><div class="empty">Még nincsenek hírek.</div></div>
+</div></section>
+
+<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
+<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
+  <div class="nv-head">
+    <div class="nv-title-wrap">
+      <div class="nv-title">Csapathírek</div>
+      <div class="nv-subtitle">A csapatok hírei — csapat szerint szűrhető</div>
+    </div>
+  </div>
+  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
+    A csapathírek a jövőben itt jelennek meg központilag.
+  </div>
+</div></section>
+
 <!-- 4. MITGLIEDSVEREINE -->
 <section class="sec" id="mitgliedsvereine"><div class="wrap">
   <div class="sec-head">
     <div class="sec-title">Csapataink</div>
     <div style="font-size:14px;color:var(--muted);margin-top:4px;max-width:640px;">A Kőbányai Darazsak mintegy 15 aktív csapatot indít a bajnokságban.</div>
-  </div>
-  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
-    <input type="text" id="mv-suche" placeholder="🔍 Csapat keresése…" oninput="bbkFilterKarten_('mv-grid', this.value)"
-      style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
-    <select id="mv-verein-dropdown" onchange="if(this.value) bbkSpringeZuKarte_('mv-grid', this.value)"
-      style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
-      <option value="">— Vagy válassz csapatot a listából —</option>
-    </select>
-  </div>
-  <div class="teams-row" id="mv-grid">
-    <div class="sb-hint">Csapatok betöltése…</div>
-  </div>
-</div></section>
-
-<script>
-// ── Generische Such-/Filterfunktion für Vereinskarten-Reihen ──
-// Wird sowohl von Spielbetrieb (bbk-verein-grid) als auch von
-// Mitgliedsvereine (mv-grid) verwendet. Blendet Karten ein/aus,
-// ohne das Grid neu zu laden — rein clientseitiger Textabgleich.
-function bbkFilterKarten_(gridId, query){
-  const grid = document.getElementById(gridId);
-  if(!grid) return;
-  const q = String(query||'').trim().toLowerCase();
-  grid.querySelectorAll('.mv-card').forEach(card => {
-    const name = (card.querySelector('.mv-card-name')?.textContent || '').toLowerCase();
-    card.style.display = (!q || name.includes(q)) ? '' : 'none';
-  });
-}
-
-// ============================================================
-// Mitgliedsvereine — Schritt 4 (07.07.2026)
-// Lädt dieselbe Vereinsliste wie Spielbetrieb aus dem Sheet
-// BBK_Spielbetrieb (über getDarazsakSpielbetrieb). Bewusst UNABHÄNGIG vom
-// Spielbetrieb-Code (kein gemeinsamer Zustand, keine gemeinsamen
-// Funktionen) — dort wird nichts verändert.
-//
-// Später: sobald das Sheet zusätzliche Spalten für Website/App/
-// Social-Links führt, können diese hier einfach ergänzt werden
-// (v.website, v.app, v.social o.ä.) — ohne dass diese Funktion
-// nochmal umgebaut werden muss.
-// ============================================================
-window.addEventListener('DOMContentLoaded', async () => {
-  const grid = document.getElementById('mv-grid');
-  if(!grid) return;
-
-  // Bekannte Vereinslogos (Stand 07.07.2026). Nur eindeutig zuordenbare
-  // Logos sind hier eingetragen — bei Unsicherheit bleibt bewusst das
-  // Basketball-Icon als Fallback, statt falsch zuzuordnen.
-  const BBK_VEREIN_LOGOS = {
-    'Osterather TV 1893 e. V.': 'logos/Logo-OTV_300326.png',
-    'STV Rethel e.V.': 'logos/Logo-Rethel_300326.png',
-    'Turngemeinde v.1881 Düsseldorf': 'logos/Logo-TG81_300326.png',
-    'DJK TUSA 06 Düsseldorf': 'logos/Logo-TUSA_300326.png',
-    'ART 77/90 Düsseldorf': 'logos/Logo-ART_Düsseldorf_300326.png',
-    'SG ART Giants Düsseldorf': 'logos/Logo-ART_Giants_300326.png',
-    'Capitol Bascats Düsseldorf e.V.': 'logos/Logo-Capitol_300326.png',
-    'TSV Bayer Dormagen e. V.': 'logos/Logo-Dormagen_300326.png',
-    'FSV Jüchen 1984 e.V.': 'logos/Logo-FSV_Jüchen_300326.png',
-    'Greek Baskets Düsseldorf': 'logos/Logo-Greek_300326.png',
-    'ISD Sportverein e. V.': 'logos/Logo-ISD_300326.png',
-    'BG Kaarst-Büttgen': 'logos/Logo-Kaarst-Büttgen_300326.png',
-    'TuS Maccabi Düsseldorf e. V.': 'logos/Logo-Maccabi_300326.png',
-    'BSG Blau-Weiß Grevenbroich': 'logos/Logo-Elephants_300326.png',
-    'SG Rot-Weiß Gierath 48/62 e.V.': 'logos/Logo-Scorpions-Gierath.svg'
-    // "Logo-Stürzelberg" bewusst NICHT zugeordnet — Verein existiert
-    // aktuell nicht / hat keine Mannschaften im Spielbetrieb (07.07.2026)
-  };
-
-  try {
-    const resp = await fetch(GAS + '?action=getDarazsakSpielbetrieb');
-    const data = await resp.json();
-
-    if(!data || !data.success || !data.vereine || !data.vereine.length){
-      grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
-      return;
-    }
-
-    grid.innerHTML = data.vereine.map(v => {
-      // Zukünftige Zusatzdaten (Website/App/Social) — solange das Sheet
-      // sie noch nicht liefert, bleibt es beim reinen Namen + Icon.
-      const link = v.website || v.web || '';
-      const istLink = link && link.trim();
-      const logoPfad = BBK_VEREIN_LOGOS[v.name];
-      const logoHtml = logoPfad
-        ? `<img src="${esc(logoPfad)}" alt="${esc(v.name)}" style="width:56px;height:56px;border-radius:50%;object-fit:contain;background:var(--card-2);" onerror="this.outerHTML='🏀'">`
-        : '🏀';
-      return `<a class="mv-card" data-name="${esc(v.name)}" href="${istLink ? esc(link) : '#'}"${istLink ? ' target="_blank" rel="noopener"' : ''}>
-          <div class="mv-card-logo">${logoHtml}</div>
-          <div class="mv-card-name">${esc(v.name)}</div>
-        </a>`;
-    }).join('');
-
-    const mvDd = document.getElementById('mv-verein-dropdown');
-    if(mvDd){
-      mvDd.innerHTML = '<option value="">— Vagy válassz csapatot a listából —</option>' +
-        data.vereine.map(v => `<option value="${esc(v.name)}">${esc(v.name)}</option>`).join('');
-    }
-  } catch(err){
-    grid.innerHTML = '<div class="sb-hint">Diese Daten werden derzeit ergänzt.</div>';
-    console.warn('Mitgliedsvereine Fehler:', err);
-  }
-});
-
-// ── Springt zur passenden Karte und hebt sie kurz hervor ──
-// (aktuell für Mitgliedsvereine-Dropdown genutzt; generisch für jedes
-// Grid mit data-name-Attribut auf den Karten)
-function bbkSpringeZuKarte_(gridId, name){
-  const grid = document.getElementById(gridId);
-  if(!grid) return;
-  const card = grid.querySelector(`[data-name="${CSS.escape(name)}"]`);
-  if(!card) return;
-  card.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'});
-  card.style.transition = 'box-shadow .3s';
-  card.style.boxShadow = '0 0 0 3px var(--primary)';
-  setTimeout(() => { card.style.boxShadow = ''; }, 1500);
-}
-</script>
-
-<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
-<section class="sec-sm" id="aktuelles"><div class="wrap">
-  <div class="hero-grid" id="hero-grid">
-    <div id="hero-main"></div>
-    <div class="hero-side" id="hero-side"></div>
-  </div>
-</div></section>
-
-<!-- 5b. AKTUELLE NEWS (Grid) -->
-<section class="nv-section" id="aktuelle-news"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Hírek</div>
-      <div class="nv-subtitle">A Kőbányai Darazsak hivatalos hírei — közvetlenül az ONLANG Studióból</div>
-    </div>
-    <a class="nv-more" href="#">Összes hír →</a>
-  </div>
-  <div class="nv-grid" id="nv-grid"><div class="empty">Még nincsenek hírek.</div></div>
-</div></section>
-
-<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
-<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Csapathírek</div>
-      <div class="nv-subtitle">A csapatok hírei — csapat szerint szűrhető</div>
-    </div>
-  </div>
-  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
-    A csapathírek a jövőben itt jelennek meg központilag.
-  </div>
-</div></section>
-<nav class="mob-nav" id="mob-nav">
-  <a class="nav-a" href="#start" onclick="toggleNav()">Kezdőlap</a>
-  <a class="nav-a" href="#aktuelles" onclick="toggleNav()">Hírek</a>
-  <a class="nav-a" href="#spielbetrieb" onclick="toggleNav()">Bajnokság</a>
-  <a class="nav-a" href="#bbk-tv" onclick="toggleNav()">Klub-TV</a>
-  <a class="nav-a" href="#mitgliedsvereine" onclick="toggleNav()">Csapataink</a>
-  <a class="nav-a" href="#veranstaltungen" onclick="toggleNav()">Események</a>
-  <a class="nav-a" href="#downloads" onclick="toggleNav()">Letöltések</a>
-  <a class="nav-a" href="#ueber-bbk" onclick="toggleNav()">A klubról</a>
-</nav>
-
-
-<!-- SPIELBETRIEB (BBK-Version) — bewusst getrennt von der Vereins-Team-Logik.
-     Verein-Website: Mannschaft wählen (sbTab/sbWaehleTeam bleiben unverändert).
-     BBK-Kreisplattform: zwei gleichwertige Wege zu Tabelle/Ergebnisse/Spieltermine:
-       a) Nach Liga    – alle Kreisligen direkt, ohne Vereinsbezug (BBK organisiert Ligen)
-       b) Nach Verein  – Verein → Kreisliga-Mannschaften dieses Vereins (bereits freigegeben, unverändert)
-     Rein statisch, keine neue API, keine echten Daten. -->
-<section class="sec" id="spielbetrieb" style="border-top:1px solid var(--border);"><div class="wrap">
-  <div class="sec-head">
-    <div class="sec-title">Bajnokság</div>
-    <div style="font-size:13px;color:var(--muted);margin-top:4px;">Az összes bajnokság — liga vagy csapat szerint</div>
-  </div>
-  <div class="app-eyebrow" style="margin-bottom:22px;">📅 A szezon előkészületben. Hamarosan itt jelennek meg a tabellák, eredmények és mérkőzések.</div>
-
-  <!-- Moduswahl: Nach Liga / Nach Verein -->
-  <div class="sb-tabs" style="margin-bottom:24px;">
-    <button class="sb-tab on" id="bbk-modus-btn-liga" onclick="bbkModusWaehlen('liga', this)">🏆 Liga szerint</button>
-    <button class="sb-tab" id="bbk-modus-btn-verein" onclick="bbkModusWaehlen('verein', this)">🏀 Csapat szerint</button>
-  </div>
-
-  <!-- MODUS A: NACH LIGA — alle Kreisligen direkt, ohne Vereinsbezug -->
-  <div id="bbk-modus-liga">
-    <div class="sb-tabelle-label" style="margin-bottom:10px;">Válassz ligát</div>
-    <div class="teams-row" id="bbk-liga-grid" style="margin-bottom:8px;"></div>
-  </div>
-
-  <!-- MODUS B: NACH VEREIN — bereits freigegebene Struktur, unverändert -->
-  <div id="bbk-modus-verein" style="display:none;">
-    <!-- Schritt 1: Verein auswählen -->
-    <div class="sb-tabelle-label" style="margin-bottom:10px;">Válassz csapatot</div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
-      <input type="text" id="bbk-verein-suche" placeholder="🔍 Csapat keresése…" oninput="bbkFilterKarten_('bbk-verein-grid', this.value)"
-        style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
-      <select id="bbk-verein-dropdown" onchange="if(this.value) bbkVereinWaehlen(this.value)"
-        style="flex:1;min-width:200px;max-width:360px;padding:10px 14px;border-radius:10px;border:1px solid var(--border);background:var(--card);color:#fff;font-size:14px;">
-        <option value="">— Vagy válassz csapatot a listából —</option>
-      </select>
-    </div>
-    <div class="teams-row" id="bbk-verein-grid" style="margin-bottom:28px;"></div>
-
-    <!-- Schritt 2: Mannschaftskarten des gewählten Vereins -->
-    <div id="bbk-mannschaft-block" style="display:none;margin-bottom:28px;">
-      <div class="sb-tabelle-label" id="bbk-mannschaft-label" style="margin-bottom:10px;">Csapatok</div>
-      <div class="teams-row" id="bbk-mannschaft-grid"></div>
-    </div>
-  </div>
-
-  <!-- GEMEINSAMER ZIELBEREICH: Tabs für Liga ODER Verein/Mannschaft -->
-  <div id="bbk-sportdaten-block" style="display:none;margin-top:12px;">
-    <div class="sb-tabelle-label" style="margin-bottom:10px;">Kiválasztva: <strong id="bbk-aktive-mannschaft">–</strong></div>
-    <div class="sb-tabs">
-      <button class="sb-tab on" onclick="bbkSbTab(this,'bbk-sb-tabelle')">📊 Tabella</button>
-      <button class="sb-tab" onclick="bbkSbTab(this,'bbk-sb-ergebnisse')">🏀 Eredmények</button>
-      <button class="sb-tab" onclick="bbkSbTab(this,'bbk-sb-spielplan')">📅 Mérkőzések</button>
-    </div>
-    <div class="sb-panel on" id="bbk-sb-tabelle">
-      <div class="sb-tabelle-wrap"><div class="sb-hint">A szezon előkészületben. Hamarosan itt jelennek meg a tabellák, eredmények és mérkőzések.</div></div>
-    </div>
-    <div class="sb-panel" id="bbk-sb-ergebnisse">
-      <div class="sb-tabelle-wrap"><div class="sb-hint">A szezon előkészületben. Hamarosan itt jelennek meg a tabellák, eredmények és mérkőzések.</div></div>
-    </div>
-    <div class="sb-panel" id="bbk-sb-spielplan">
-      <div class="sb-tabelle-wrap"><div class="sb-hint">A szezon előkészületben. Hamarosan itt jelennek meg a tabellák, eredmények és mérkőzések.</div></div>
-    </div>
-  </div>
-</div></section>
-
-<!-- 3. LIVE-SPORTBAND -->
-<div class="sportband" id="sportband">
-  <div class="sportband-label"><div class="sportband-dot"></div>Élő</div>
-  <div class="sportband-wrap"><div class="sportband-track" id="sportband-track"><div class="sportband-item">Betöltés…</div></div></div>
-</div>
-
-<!-- 5. HERO / AKTUELLE NACHRICHTEN (bestehende News-Logik, unverändert funktional) -->
-<section class="sec-sm" id="aktuelles"><div class="wrap">
-  <div class="hero-grid" id="hero-grid">
-    <div id="hero-main"></div>
-    <div class="hero-side" id="hero-side"></div>
-  </div>
-</div></section>
-
-<!-- 5b. AKTUELLE NEWS (Grid) -->
-<section class="nv-section" id="aktuelle-news"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Hírek</div>
-      <div class="nv-subtitle">A Kőbányai Darazsak hivatalos hírei — közvetlenül az ONLANG Studióból</div>
-    </div>
-    <a class="nv-more" href="#">Összes hír →</a>
-  </div>
-  <div class="nv-grid" id="nv-grid"><div class="empty">Még nincsenek hírek.</div></div>
-</div></section>
-
-<!-- 5c. VEREINSNACHRICHTEN – vorbereitet, noch nicht aktiv (siehe Hinweis) -->
-<section class="sec sec-alt" id="vereinsnachrichten"><div class="wrap">
-  <div class="nv-head">
-    <div class="nv-title-wrap">
-      <div class="nv-title">Csapathírek</div>
-      <div class="nv-subtitle">A csapatok hírei — csapat szerint szűrhető</div>
-    </div>
-  </div>
-  <div class="empty" style="padding:32px 0;text-align:center;color:var(--muted);font-size:14px;">
-    A csapathírek a jövőben itt jelennek meg központilag.
-  </div>
-</div></section>
-
-<!-- 4. MITGLIEDSVEREINE -->
-<section class="sec" id="mitgliedsvereine"><div class="wrap">
-  <div class="sec-head">
-    <div class="sec-title">Csapataink</div>
-    <div style="font-size:14px;color:var(--muted);margin-top:4px;max-width:640px;">A Kőbányai Darazsak mintegy 12 aktív csapatot indít a bajnokságban.</div>
   </div>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;">
     <input type="text" id="mv-suche" placeholder="🔍 Csapat keresése…" oninput="bbkFilterKarten_('mv-grid', this.value)"
