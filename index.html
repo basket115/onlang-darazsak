@@ -2900,7 +2900,13 @@ async function renderDarazsakHeroBanner(){
   const rightCol = document.querySelector('.bbk-hero-right');
   if(!rightCol) return;
   try{
-    const r = await api({action:'get_banners', kundenId:KUNDE});
+    // Direkter GET auf die Motor-Bereitstellung, die get_banners ÖFFENTLICH ausliefert
+    // (…HGGthppYA/exec). Die Datei-GAS (…VXa2ntA/exec) verlangt für get_banners ein
+    // Passwort → Antwort "Kein Passwort". Nur der Banner nutzt diese URL; alle anderen
+    // Module bleiben unverändert auf GAS. _cb = Cache-Buster wie im Rest der Datei.
+    const GAS_BANNER = 'https://script.google.com/macros/s/AKfycbzrvPIQsGaqHP28_9G-geahMB0QMYHlbylnGLUTeJagi1Sc_rgPVErasrhc0HGGthppYA/exec';
+    const _bResp = await fetch(GAS_BANNER + '?action=get_banners&kundenId=' + encodeURIComponent(KUNDE) + '&_cb=' + Date.now(), {cache:'no-store'});
+    const r = await _bResp.json();
     console.info('[Darazsak Banner] get_banners für', KUNDE, '→', r);
     if(!r || !r.success || !Array.isArray(r.banners) || !r.banners.length){
       console.warn('[Darazsak Banner] Keine Banner-Zeilen aus dem Sheet für '+KUNDE+' – bestehendes Bild bleibt.');
