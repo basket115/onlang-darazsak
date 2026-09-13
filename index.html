@@ -2889,6 +2889,70 @@ function initNav(){
 
 function toggleNav(){document.getElementById('mob-nav').classList.toggle('open');}
 
+// ═══════════════════════════════════════════════════════
+// DARAZSAK Hero-Banner aus dem Sheet (ONLANG_BANNER, Kunden_ID=HU001)
+// Rendert ein SICHTBARES Banner in den bbk-hero-right-Container –
+// dieselbe erprobte Mechanik wie bei template7/BBK. Layout bleibt sonst
+// unverändert. Wenn keine Banner-Zeile da ist, bleibt der bestehende
+// Inhalt (Recruitment-Bild) stehen.
+// ═══════════════════════════════════════════════════════
+async function renderDarazsakHeroBanner(){
+  const rightCol = document.querySelector('.bbk-hero-right');
+  if(!rightCol) return;
+  try{
+    const r = await api({action:'get_banners', kundenId:KUNDE});
+    console.info('[Darazsak Banner] get_banners für', KUNDE, '→', r);
+    if(!r || !r.success || !Array.isArray(r.banners) || !r.banners.length){
+      console.warn('[Darazsak Banner] Keine Banner-Zeilen aus dem Sheet für '+KUNDE+' – bestehendes Bild bleibt.');
+      return;
+    }
+    const now = Date.now();
+    const parseD = (v)=>{ if(!v) return 0; const t=new Date(v).getTime(); return isNaN(t)?0:t; };
+    const aktiv = r.banners.filter(b=>{
+      const titel = b.Titel||b.titel||'(ohne Titel)';
+      const st = parseD(b.Banner_Start||b.banner_start), en = parseD(b.Banner_Ende||b.banner_ende);
+      if(st && now<st){ console.info('[Darazsak Banner] "'+titel+'" übersprungen: Start in der Zukunft.'); return false; }
+      if(en && now>en){ console.info('[Darazsak Banner] "'+titel+'" übersprungen: Ende vorbei.'); return false; }
+      if(String(b.Bild_URL||b.bild_url||'').trim()===''){ console.info('[Darazsak Banner] "'+titel+'" übersprungen: kein Bild_URL.'); return false; }
+      return true;
+    }).sort((a,b)=>{
+      const ra=Number(a.Reihenfolge||a.reihenfolge||a.Prioritaet||a.prioritaet||999);
+      const rb=Number(b.Reihenfolge||b.reihenfolge||b.Prioritaet||b.prioritaet||999);
+      return ra-rb;
+    });
+    console.info('[Darazsak Banner] Aktive Banner nach Filter:', aktiv.length);
+    if(!aktiv.length){ console.warn('[Darazsak Banner] Alle Zeilen ausgefiltert – bestehendes Bild bleibt.'); return; }
+
+    const b0 = aktiv[0];
+    const bild = String(b0.Bild_URL||b0.bild_url||'').trim();
+    const ziel = String(b0.Link_URL||b0.link_url||b0.Link||'').trim();
+    const text = String(b0.Titel||b0.titel||b0.Untertitel||b0.untertitel||'Darazsak').trim();
+    if(!bild){ console.warn('[Darazsak Banner] Kein Bild_URL – bestehendes Bild bleibt.'); return; }
+
+    const extern = /^https?:\/\//i.test(ziel);
+    const targetAttr = extern ? ' target="_blank" rel="noopener"' : '';
+    const linkOpen = ziel ? ('<a href="'+esc(ziel)+'"'+targetAttr+' aria-label="'+esc(text)+'" style="display:block;text-decoration:none;">') : '';
+    const linkClose = ziel ? '</a>' : '';
+
+    rightCol.innerHTML =
+      linkOpen
+      + '<img src="'+esc(bild)+'" alt="'+esc(text)+'" '
+      + 'style="display:block;width:100%;height:auto;max-height:460px;object-fit:cover;'
+      + 'border-radius:var(--rx);border:1px solid var(--border);background:var(--surface2);" '
+      + 'onerror="this.style.display=\'none\'">'
+      + linkClose;
+    console.info('[Darazsak Banner] Sheet-Banner sichtbar gerendert:', bild);
+  }catch(e){
+    console.error('[Darazsak Banner] Fehler bei get_banners – bestehendes Bild bleibt:', e);
+  }
+}
+
+// Unabhängig starten, damit ein Fehler in init() den Banner nicht blockiert.
+(function startDarazsakBanner_(){
+  try{ renderDarazsakHeroBanner(); }
+  catch(e){ console.warn('[Darazsak Banner] Starter-Fehler:', e); }
+})();
+
 init();
 </script>
 </body>
