@@ -1716,6 +1716,41 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════
 
 const GAS = 'https://script.google.com/macros/s/AKfycbx7gnTorNAQz21x3vwZOFQl2bkP2t1QKLppcUSQ_-CQywRS-36AZOeqDDMJg3uXVa2ntA/exec';
+
+/* ══════════════════════════════════════════════════════════════
+   DEMO-LEICHT-SCHALTER (Vereins-Termin): schwere BBK/Darazsak-Bereiche
+   abschalten, damit der GAS-Motor beim Start nicht durch viele parallele
+   Aufrufe blockiert wird. Diese Endpunkte liefern hier sofort {success:false}
+   OHNE Netzaufruf -> keine Wartezeit, kein Stau. Die betroffenen Bereiche
+   (Spielbetrieb, Ligen, Vorstand, Kontakte, Mitgliedsvereine, Sportband)
+   zeigen dann ihren Platzhalter. Banner, News, Teams, TV, Sponsoren laufen
+   normal weiter. ZUM ZURÜCKHOLEN: DEMO_LEICHT = false setzen (nichts gelöscht).
+   ══════════════════════════════════════════════════════════════ */
+const DEMO_LEICHT = true;
+(function(){
+  if(!DEMO_LEICHT) return;
+  var SCHWER = ['getDarazsakSpielbetrieb','getDarazsakLigen','getDarazsakTabelle',
+                'getDarazsakAllgemein','getDarazsakKontakte','getSportband',
+                'getBbkVereine','getBbkLigen','getBbkTabelle','getBbkAllgemein',
+                'getPersonen','getBbkKontakte'];
+  if(!window.fetch) return;
+  var origFetch = window.fetch.bind(window);
+  window.fetch = function(input, init){
+    try{
+      var url = (typeof input === 'string') ? input : (input && input.url) || '';
+      for(var i=0;i<SCHWER.length;i++){
+        if(url.indexOf('action=' + SCHWER[i]) !== -1){
+          console.info('[Demo-leicht] übersprungen:', SCHWER[i]);
+          return Promise.resolve(new Response(
+            JSON.stringify({ success:false, demo:true }),
+            { status:200, headers:{ 'Content-Type':'application/json' } }
+          ));
+        }
+      }
+    }catch(e){}
+    return origFetch(input, init);
+  };
+})();
 window.BBK_APP_URL = 'https://app.scorpions-sggierath.de/?kunde=HU001'; /* TODO: Darazsak-App-URL eintragen */
 const EV_ARTEN = ['camp','turnier','jahreshauptversammlung','vereinsfest','probetraining','trainerfortbildung','veranstaltung','event','fest','feier','hauptversammlung'];
 
